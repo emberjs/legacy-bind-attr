@@ -1,7 +1,6 @@
 import TransformBindAttrToAttributes from 'transform-bind-attr-to-attributes';
 
 export function initialize() {
-  console.log('registered!');
   Ember.HTMLBars.registerPlugin('ast', TransformBindAttrToAttributes);
 }
 
