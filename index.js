@@ -7,12 +7,16 @@ var triggered = false;
 module.exports = {
   name: 'bind-attr',
 
+  included: function(app) {
+    app.import('vendor/lib/transform-bind-attr-to-attributes/index.js');
+  },
+
   setupPreprocessorRegistry: function(type, registry) {
     var checker = new VersionChecker(this);
     this._checkerForEmber = checker.for('ember', 'bower');
 
     if (this._checkerForEmber.gt('2.0.0-beta.1')) {
-      var TransformBindAttrToAttributes = require('./lib/ember-template-compiler/plugins/transform-bind-attr-to-attributes');
+      var TransformBindAttrToAttributes = require('./vendor/lib/transform-bind-attr-to-attributes');
 
       registry.add('htmlbars-ast-plugin', {
         name: 'transform-bind-attr-to-attributes',
