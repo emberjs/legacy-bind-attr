@@ -8,7 +8,7 @@ module.exports = {
   name: 'bind-attr',
 
   included: function(app) {
-    app.import('vendor/lib/transform-bind-attr-to-attributes/index.js');
+    app.import('vendor/transform-bind-attr-to-attributes/index.js');
   },
 
   setupPreprocessorRegistry: function(type, registry) {
@@ -16,7 +16,7 @@ module.exports = {
     this._checkerForEmber = checker.for('ember', 'bower');
 
     if (this._checkerForEmber.gt('2.0.0-beta.1')) {
-      var TransformBindAttrToAttributes = require('./vendor/lib/transform-bind-attr-to-attributes');
+      var TransformBindAttrToAttributes = require('./vendor/transform-bind-attr-to-attributes');
 
       registry.add('htmlbars-ast-plugin', {
         name: 'transform-bind-attr-to-attributes',

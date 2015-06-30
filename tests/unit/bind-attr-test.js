@@ -1,52 +1,47 @@
-/*globals equal, expect, ok, deepEqual, ignoreDeprecation, expectAssertion */
+/*globals QUnit, equal, expect, ok, deepEqual, ignoreDeprecation, expectAssertion */
 
 import Ember from 'ember';
-import AssertionAssert from 'ember-dev/test-helper/assertion';
-import Deprecation from 'ember-dev/test-helper/deprecation';
 import { initialize } from 'dummy/initializers/register-bind-attr';
 import bindAttrClassHelper from 'dummy/helpers/-bind-attr-class';
 import { runAppend, runDestroy } from '../helpers/run-append';
-import { moduleFor, test } from 'ember-qunit';
+import AssertionAssert from 'ember-dev/test-helper/assertion';
+import Deprecation from 'ember-dev/test-helper/deprecation';
 
-var computed = Ember.computed;
-var EmberObject = Ember.Object;
-var EmberView = Ember.View;
-var observersFor = Ember.__loader.require('ember-metal/observer').observersFor;
 var Namespace = Ember.__loader.require('ember-runtime/system/namespace')['default'];
 var Registry = Ember.__loader.require('ember-runtime/system/container').Registry;
-var compiler = Ember.__loader.require('ember-template-compiler');
-var compile = compiler.compile;
+var observersFor = Ember.__loader.require('ember-metal/observer').observersFor;
+var compile = Ember.__loader.require('ember-template-compiler').compile;
+var SafeString = Ember.Handlebars.SafeString;
+var EmberObject = Ember.Object;
+var computed = Ember.computed;
+var EmberView = Ember.View;
 var run = Ember.run;
 var set = Ember.set;
 var get = Ember.get;
-var A = Ember.A;
-var EmberDev = true;
-var SafeString = Ember.Handlebars.SafeString;
 
 // suppress deprecation warnings
 if (Ember && Ember.ENV) {
   Ember.ENV._ENABLE_LEGACY_VIEW_SUPPORT = true;
 }
 
-var view;
+var registry, container, view;
 var originalLookup = Ember.lookup;
-var TemplateTests, registry, container, lookup, warnings, originalWarn;
-var assertion, deprecation;
+var TemplateTests, lookup, warnings, originalWarn;
 
-moduleFor('helper:-bind-attr-class', {
+QUnit.module('ember-htmlbars: {{bind-attr}} [DEPRECATED]', {
   setup() {
-    assertion = new AssertionAssert({ Ember: Ember });
+    var assertion = new AssertionAssert({ Ember: Ember });
+    var deprecation = new Deprecation({ Ember: Ember });
+    var registry = new Registry();
+    container = registry.container();
     assertion.inject();
-    deprecation = new Deprecation({ Ember: Ember });
     deprecation.inject();
     Ember.lookup = lookup = {};
     lookup.TemplateTests = TemplateTests = Namespace.create();
-    registry = new Registry();
-    container = registry.container();
     registry.optionsForType('template', { instantiate: false });
     registry.register('view:toplevel', EmberView.extend());
     Ember.HTMLBars._registerHelper('-bind-attr-class', bindAttrClassHelper);
-    initialize();
+    initialize(); // registers the bind-attr transform bind attr as a HTMLBars plugin
     warnings = [];
     originalWarn = Ember.warn;
 
@@ -56,16 +51,18 @@ moduleFor('helper:-bind-attr-class', {
       }
     };
   },
-  afterEach() {
-    assertion.restore();
+  teardown() {
     runDestroy(view);
+    runDestroy(container);
+
+    registry = container = view = null;
     Ember.lookup = lookup = originalLookup;
     Ember.warn = originalWarn;
     TemplateTests = null;
   }
 });
 
-test('should be able to bind element attributes using {{bind-attr}}', function() {
+QUnit.test('should be able to bind element attributes using {{bind-attr}}', function() {
   view = EmberView.create({
     template: compile('<img {{bind-attr src=view.content.url alt=view.content.title}}>'),
     content: EmberObject.create({
@@ -116,7 +113,7 @@ test('should be able to bind element attributes using {{bind-attr}}', function()
   equal(view.$('img').attr('alt'), 'Nanananana Ember!', 'updates alt attribute when title property is computed');
 });
 
-test('should be able to bind to view attributes with {{bind-attr}}', function() {
+QUnit.test('should be able to bind to view attributes with {{bind-attr}}', function() {
   view = EmberView.create({
     value: 'Test',
     template: compile('<img src="test.jpg" {{bind-attr alt=view.value}}>')
@@ -134,7 +131,7 @@ test('should be able to bind to view attributes with {{bind-attr}}', function() 
 });
 
 
-test('should be able to bind to globals with {{bind-attr}}', function() {
+QUnit.test('should be able to bind to globals with {{bind-attr}}', function() {
   TemplateTests.set('value', 'Test');
 
   view = EmberView.create({
@@ -146,7 +143,7 @@ test('should be able to bind to globals with {{bind-attr}}', function() {
   equal(view.$('img').attr('alt'), 'Test', 'renders initial value');
 });
 
-test('should not allow XSS injection via {{bind-attr}}', function() {
+QUnit.test('should not allow XSS injection via {{bind-attr}}', function() {
   view = EmberView.create({
     template: compile('<img src="test.jpg" {{bind-attr alt=view.content.value}}>'),
     content: {
@@ -161,7 +158,7 @@ test('should not allow XSS injection via {{bind-attr}}', function() {
   equal(view.$('img').attr('alt'), 'Trololol" onmouseover="alert(\'HAX!\');');
 });
 
-test('should be able to bind use {{bind-attr}} more than once on an element', function() {
+QUnit.test('should be able to bind use {{bind-attr}} more than once on an element', function() {
   view = EmberView.create({
     template: compile('<img {{bind-attr src=view.content.url}} {{bind-attr alt=view.content.title}}>'),
     content: EmberObject.create({
@@ -212,7 +209,7 @@ test('should be able to bind use {{bind-attr}} more than once on an element', fu
   equal(view.$('img').attr('alt'), 'Nanananana Ember!', 'updates alt attribute when title property is computed');
 });
 
-test('{{bindAttr}} can be used to bind attributes', function() {
+QUnit.test('{{bindAttr}} can be used to bind attributes', function() {
   expect(2);
 
   view = EmberView.create({
@@ -231,7 +228,7 @@ test('{{bindAttr}} can be used to bind attributes', function() {
   equal(view.$('img').attr('alt'), 'Updated', 'updates value');
 });
 
-test('should be able to bind element attributes using {{bind-attr}} inside a block', function() {
+QUnit.test('should be able to bind element attributes using {{bind-attr}} inside a block', function() {
   view = EmberView.create({
     template: compile('{{#with view.content as image}}<img {{bind-attr src=image.url alt=image.title}}>{{/with}}'),
     content: EmberObject.create({
@@ -252,7 +249,7 @@ test('should be able to bind element attributes using {{bind-attr}} inside a blo
   equal(view.$('img').attr('alt'), 'El logo de Eember', 'updates alt attribute when content\'s title attribute changes');
 });
 
-test('should be able to bind class attribute with {{bind-attr}}', function() {
+QUnit.test('should be able to bind class attribute with {{bind-attr}}', function() {
   view = EmberView.create({
     template: compile('<img {{bind-attr class="view.foo"}}>'),
     foo: 'bar'
@@ -269,7 +266,7 @@ test('should be able to bind class attribute with {{bind-attr}}', function() {
   equal(view.element.firstChild.className, 'baz', 'updates rendered class');
 });
 
-test('should be able to bind unquoted class attribute with {{bind-attr}}', function() {
+QUnit.test('should be able to bind unquoted class attribute with {{bind-attr}}', function() {
   view = EmberView.create({
     template: compile('<img {{bind-attr class=view.foo}}>'),
     foo: 'bar'
@@ -286,7 +283,7 @@ test('should be able to bind unquoted class attribute with {{bind-attr}}', funct
   equal(view.$('img').attr('class'), 'baz', 'updates class');
 });
 
-test('should be able to bind class attribute via a truthy property with {{bind-attr}}', function() {
+QUnit.test('should be able to bind class attribute via a truthy property with {{bind-attr}}', function() {
   view = EmberView.create({
     template: compile('<img {{bind-attr class="view.isNumber:is-truthy"}}>'),
     isNumber: 5
@@ -303,7 +300,7 @@ test('should be able to bind class attribute via a truthy property with {{bind-a
   ok(view.element.firstChild.className !== 'is-truthy', 'removes class');
 });
 
-test('should be able to bind class to view attribute with {{bind-attr}}', function() {
+QUnit.test('should be able to bind class to view attribute with {{bind-attr}}', function() {
   view = EmberView.create({
     template: compile('<img {{bind-attr class="view.foo"}}>'),
     foo: 'bar'
@@ -320,7 +317,7 @@ test('should be able to bind class to view attribute with {{bind-attr}}', functi
   equal(view.$('img').attr('class'), 'baz', 'updates class');
 });
 
-test('should not allow XSS injection via {{bind-attr}} with class', function() {
+QUnit.test('should not allow XSS injection via {{bind-attr}} with class', function() {
   view = EmberView.create({
     template: compile('<img {{bind-attr class="view.foo"}}>'),
     foo: '" onmouseover="alert(\'I am in your classes hacking your app\');'
@@ -334,7 +331,7 @@ test('should not allow XSS injection via {{bind-attr}} with class', function() {
   equal(view.$('img').attr('onmouseover'), undefined);
 });
 
-test('should be able to bind class attribute using ternary operator in {{bind-attr}}', function() {
+QUnit.test('should be able to bind class attribute using ternary operator in {{bind-attr}}', function() {
   var content = EmberObject.create({
     isDisabled: true
   });
@@ -357,7 +354,7 @@ test('should be able to bind class attribute using ternary operator in {{bind-at
   ok(view.$('img').hasClass('enabled'), 'enabled class is rendered');
 });
 
-test('should be able to add multiple classes using {{bind-attr class}}', function() {
+QUnit.test('should be able to add multiple classes using {{bind-attr class}}', function() {
   var content = EmberObject.create({
     isAwesomeSauce: true,
     isAlsoCool: true,
@@ -392,7 +389,7 @@ test('should be able to add multiple classes using {{bind-attr class}}', functio
   ok(view.$('div').hasClass('disabled'), 'falsy class in ternary classname definition is rendered');
 });
 
-test('should be able to bind classes to globals with {{bind-attr class}}', function() {
+QUnit.test('should be able to bind classes to globals with {{bind-attr class}}', function() {
   TemplateTests.set('isOpen', true);
 
   view = EmberView.create({
@@ -404,7 +401,7 @@ test('should be able to bind classes to globals with {{bind-attr class}}', funct
   ok(view.$('img').hasClass('is-open'), 'sets classname to the dasherized value of the global property');
 });
 
-test('should be able to bind-attr to \'this\' in an {{#each}} block', function() {
+QUnit.test('should be able to bind-attr to \'this\' in an {{#each}} block', function() {
   view = EmberView.create({
     template: compile('{{#each view.images}}<img {{bind-attr src=this}}>{{/each}}'),
     images: Ember.A(['one.png', 'two.jpg', 'three.gif'])
@@ -418,7 +415,7 @@ test('should be able to bind-attr to \'this\' in an {{#each}} block', function()
   ok(/three\.gif$/.test(images[2].src));
 });
 
-test('should be able to bind classes to \'this\' in an {{#each}} block with {{bind-attr class}}', function() {
+QUnit.test('should be able to bind classes to \'this\' in an {{#each}} block with {{bind-attr class}}', function() {
   view = EmberView.create({
     template: compile('{{#each view.items}}<li {{bind-attr class="this"}}>Item</li>{{/each}}'),
     items: Ember.A(['a', 'b', 'c'])
@@ -431,7 +428,7 @@ test('should be able to bind classes to \'this\' in an {{#each}} block with {{bi
   ok(view.$('li').eq(2).hasClass('c'), 'sets classname to the value of the third item');
 });
 
-test('should be able to bind-attr to var in {{#each var in list}} block', function() {
+QUnit.test('should be able to bind-attr to var in {{#each var in list}} block', function() {
   view = EmberView.create({
     template: compile('{{#each image in view.images}}<img {{bind-attr src=image}}>{{/each}}'),
     images: Ember.A(['one.png', 'two.jpg', 'three.gif'])
@@ -455,7 +452,7 @@ test('should be able to bind-attr to var in {{#each var in list}} block', functi
   ok(/three\.gif$/.test(images[1].src));
 });
 
-test('should teardown observers from bind-attr on rerender', function() {
+QUnit.test('should teardown observers from bind-attr on rerender', function() {
   view = EmberView.create({
     template: compile('<span {{bind-attr class="view.foo" name=view.foo}}>wat</span>'),
     foo: 'bar'
@@ -472,7 +469,7 @@ test('should teardown observers from bind-attr on rerender', function() {
   equal(observersFor(view, 'foo').length, 1);
 });
 
-test('should keep class in the order it appears in', function() {
+QUnit.test('should keep class in the order it appears in', function() {
   view = EmberView.create({
     template: compile('<span {{bind-attr class=":foo :baz"}}></span>')
   });
@@ -482,7 +479,7 @@ test('should keep class in the order it appears in', function() {
   equal(view.element.firstChild.className, 'foo baz', 'classes are in expected order');
 });
 
-test('should allow either quoted or unquoted values', function() {
+QUnit.test('should allow either quoted or unquoted values', function() {
   view = EmberView.create({
     value: 'Test',
     source: 'test.jpg',
@@ -503,7 +500,7 @@ test('should allow either quoted or unquoted values', function() {
   equal(view.$('img').attr('src'), 'test2.jpg', 'updates value');
 });
 
-test('property before didInsertElement', function() {
+QUnit.test('property before didInsertElement', function() {
   var matchingElement;
   view = EmberView.create({
     name: 'bob',
@@ -516,7 +513,7 @@ test('property before didInsertElement', function() {
   equal(matchingElement.length, 1, 'element is in the DOM when didInsertElement');
 });
 
-// test('asserts for <div class=\'foo\' {{bind-attr class=\'bar\'}}></div>', function() {
+// QUnit.test('asserts for <div class=\'foo\' {{bind-attr class=\'bar\'}}></div>', function() {
 //   ignoreDeprecation(function() {
 //     expectAssertion(function() {
 //       compile('<div class="foo" {{bind-attr class=view.foo}}></div>');
@@ -524,7 +521,7 @@ test('property before didInsertElement', function() {
 //   });
 // });
 //
-// test('asserts for <div data-bar=\'foo\' {{bind-attr data-bar=\'blah\'}}></div>', function() {
+// QUnit.test('asserts for <div data-bar=\'foo\' {{bind-attr data-bar=\'blah\'}}></div>', function() {
 //   ignoreDeprecation(function() {
 //     expectAssertion(function() {
 //       compile('<div data-bar="foo" {{bind-attr data-bar=view.blah}}></div>');
@@ -532,7 +529,7 @@ test('property before didInsertElement', function() {
 //   });
 // });
 
-test('src attribute bound to undefined is empty', function() {
+QUnit.test('src attribute bound to undefined is empty', function() {
   var template;
   ignoreDeprecation(function() {
     template = compile('<img {{bind-attr src=view.undefinedValue}}>');
@@ -548,7 +545,7 @@ test('src attribute bound to undefined is empty', function() {
   ok(!view.element.firstChild.hasAttribute('src'), 'src attribute is empty');
 });
 
-test('src attribute bound to null is not present', function() {
+QUnit.test('src attribute bound to null is not present', function() {
   view = EmberView.create({
     template: compile('<img {{bind-attr src=view.nullValue}}>'),
     nullValue: null
@@ -559,7 +556,7 @@ test('src attribute bound to null is not present', function() {
   equal(view.element.firstChild.getAttribute('src'), null, 'src attribute is empty');
 });
 
-test('src attribute will be cleared when the value is set to null or undefined', function() {
+QUnit.test('src attribute will be cleared when the value is set to null or undefined', function() {
   var template = compile('<img {{bind-attr src=view.value}}>');
 
   view = EmberView.create({
@@ -597,7 +594,7 @@ test('src attribute will be cleared when the value is set to null or undefined',
 });
 
 // if (!EmberDev.runningProdBuild) {
-//   test('specifying `<div {{bind-attr style=userValue}}></div>` triggers a warning', function() {
+//   QUnit.test('specifying `<div {{bind-attr style=userValue}}></div>` triggers a warning', function() {
 //     var template;
 //     template = compile('<div {{bind-attr style=view.userValue}}></div>');
 //
@@ -612,7 +609,7 @@ test('src attribute will be cleared when the value is set to null or undefined',
 //   });
 // }
 
-test('specifying `<div {{bind-attr style=userValue}}></div>` works properly with a SafeString', function() {
+QUnit.test('specifying `<div {{bind-attr style=userValue}}></div>` works properly with a SafeString', function() {
   var template;
   template = compile('<div {{bind-attr style=view.userValue}}></div>');
 
