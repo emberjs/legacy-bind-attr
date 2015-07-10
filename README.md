@@ -1,4 +1,4 @@
-# Bind-attr
+# legacy-bind-attr
 
 Ember 2.0 deprecated `{{bind-attr}}`.
 
