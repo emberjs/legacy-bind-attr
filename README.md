@@ -1,6 +1,8 @@
 # Bind-attr
 
-This README outlines the details of collaborating on this Ember addon.
+Ember 2.0 deprecated `{{bind-attr}}`.
+
+This addon enables the bind-attr helper within your Ember 2.0 applications.  This is to provide extra time for migrating away from bind-attr, not as a permanent solution.
 
 ## Installation
 
