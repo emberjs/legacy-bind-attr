@@ -1,3 +1,4 @@
+import Ember from 'ember';
 import TransformBindAttrToAttributes from 'transform-bind-attr-to-attributes';
 
 export function initialize() {
