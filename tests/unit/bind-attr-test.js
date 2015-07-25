@@ -230,7 +230,7 @@ QUnit.test('{{bindAttr}} can be used to bind attributes', function() {
 
 QUnit.test('should be able to bind element attributes using {{bind-attr}} inside a block', function() {
   view = EmberView.create({
-    template: compile('{{#with view.content as image}}<img {{bind-attr src=image.url alt=image.title}}>{{/with}}'),
+    template: compile('{{#with view.content as |image|}}<img {{bind-attr src=image.url alt=image.title}}>{{/with}}'),
     content: EmberObject.create({
       url: 'http://www.emberjs.com/assets/images/logo.png',
       title: 'The SproutCore Logo'
@@ -430,7 +430,7 @@ QUnit.test('should be able to bind classes to \'this\' in an {{#each}} block wit
 
 QUnit.test('should be able to bind-attr to var in {{#each var in list}} block', function() {
   view = EmberView.create({
-    template: compile('{{#each image in view.images}}<img {{bind-attr src=image}}>{{/each}}'),
+    template: compile('{{#each view.images as |image|}}<img {{bind-attr src=image}}>{{/each}}'),
     images: Ember.A(['one.png', 'two.jpg', 'three.gif'])
   });
 
