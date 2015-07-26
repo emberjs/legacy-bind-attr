@@ -5,9 +5,10 @@ var VersionChecker = require('ember-cli-version-checker');
 var triggered = false;
 
 module.exports = {
-  name: 'bind-attr',
+  name: 'legacy-bind-attr',
 
   included: function(app) {
+    this._super.included.apply(this, arguments);
     app.import('vendor/transform-bind-attr-to-attributes/index.js');
   },
 

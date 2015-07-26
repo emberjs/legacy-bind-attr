@@ -5,10 +5,10 @@
 
 import Ember from 'ember';
 
-var get = Ember.get;
+const get = Ember.get;
 
 export default function bindAttrClassHelper(params) {
-  var value = params[0];
+  let value = params[0];
 
   if (Array.isArray(value)) {
     value = get(value, 'length') !== 0;
